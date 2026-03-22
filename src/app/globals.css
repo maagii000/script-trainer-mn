@@ -182,3 +182,9 @@ select option {
 ::-webkit-scrollbar-thumb:hover {
   background: #3a3a3a; 
 }
+
+@media (max-width: 768px) {
+  .sidebar { display: none !important; }
+  .mobile-nav { display: flex !important; }
+  .main-content { width: 100% !important; padding: 16px !important; }
+}
