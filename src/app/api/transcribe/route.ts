@@ -18,17 +18,12 @@ export async function POST(req: NextRequest) {
     } else {
       const { url } = await req.json()
       if (!url) return NextResponse.json({ error: 'URL required' }, { status: 400 })
-      
-      if (url && (url.includes('instagram.com') || url.includes('tiktok.com') || url.includes('facebook.com'))) {
-        return NextResponse.json({ 
-          error: 'Instagram/TikTok URL шууд дэмжихгүй. Видеог SaveVid.net-ээр татаж аваад файл upload хийнэ үү.' 
-        }, { status: 400 })
+      if (url.includes('instagram.com') || url.includes('tiktok.com') || url.includes('facebook.com')) {
+        return NextResponse.json({ error: 'Instagram/TikTok URL дэмжихгүй. SaveVid.net-ээр татаад файл upload хийнэ үү.' }, { status: 400 })
       }
-
       const res = await fetch(url)
       if (!res.ok) return NextResponse.json({ error: 'URL-аас файл татаж чадсангүй' }, { status: 400 })
       audioBlob = await res.blob()
-      fileName = 'audio.mp3'
     }
 
     const elevenForm = new FormData()
@@ -41,12 +36,17 @@ export async function POST(req: NextRequest) {
       body: elevenForm
     })
 
+    if (!res.ok) {
+      const errText = await res.text()
+      console.error('ElevenLabs error:', res.status, errText)
+      return NextResponse.json({ error: `ElevenLabs алдаа ${res.status}: ${errText.slice(0, 200)}` }, { status: 500 })
+    }
+
     const data = await res.json()
     const transcript = data.text || ''
-
-    if (!transcript) return NextResponse.json({ error: 'Transcript хоосон байна: ' + JSON.stringify(data) }, { status: 400 })
-
+    if (!transcript) return NextResponse.json({ error: 'Transcript хоосон байна' }, { status: 400 })
     return NextResponse.json({ transcript })
+
   } catch (e) {
     console.error('Transcribe error:', e)
     return NextResponse.json({ error: 'Server error: ' + (e as Error).message }, { status: 500 })
