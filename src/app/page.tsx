@@ -118,7 +118,7 @@ export default function Home() {
     ...DEGEE_HOOKS.map(h => ({ ...h, src: 'Дэгээ' })),
     ...NOTION_PATTERNS.map(p => ({ cat: p.cat, text: p.text, src: 'Notion' })),
   ]
-  const hookCats = ['all', ...new Set(allHooks.map(h => h.cat))]
+  const hookCats = ['all', ...Array.from(new Set(allHooks.map(h => h.cat)))]
   const filteredHooks = allHooks.filter(h => (hookCat === 'all' || h.cat === hookCat) && (!hookSearch || h.text.toLowerCase().includes(hookSearch.toLowerCase()))).slice(0, 60)
   const srcColor: Record<string, string> = { Hormozi: 'border-l-amber-500/50', Дэгээ: 'border-l-teal-500/50', Notion: 'border-l-violet-500/50' }
   const srcText: Record<string, string> = { Hormozi: 'text-amber-400', Дэгээ: 'text-teal-400', Notion: 'text-violet-400' }
@@ -455,3 +455,4 @@ export default function Home() {
     </div>
   )
 }
+
