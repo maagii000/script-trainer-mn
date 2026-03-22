@@ -41,6 +41,7 @@ const ICONS: Record<string, React.ReactNode> = {
   generate: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1-1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>,
   knowledge: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
   hooks: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>,
+  reel: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 4v16M17 4v16M3 8h4m10 0h4M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>,
   history: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
 };
 
@@ -84,6 +85,7 @@ function Sidebar({ active, setActive, counts }: {
         <div style={{ padding: '8px 16px', fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '16px', fontWeight: 600 }}>Мэдлэг</div>
         {nav('knowledge', 'Мэдлэгийн сан')}
         {nav('hooks', 'Hook санал')}
+        {nav('reel', 'Reel оруулах')}
         {nav('history', 'Script түүх')}
       </div>
       <div style={{ marginTop: 'auto', padding: '24px 20px', borderTop: '1px solid var(--border-subtle)' }}>
@@ -163,6 +165,45 @@ export default function Home() {
   // Hooks filter
   const [hookSearch, setHookSearch] = useState('')
   const [hookCat, setHookCat] = useState('all')
+
+  // Reel State
+  const [reelFile, setReelFile] = useState<File | null>(null)
+  const [reelCat, setReelCat] = useState('')
+  const [reelLoading, setReelLoading] = useState(false)
+  const [reelTranscript, setReelTranscript] = useState('')
+  const [reelTrained, setReelTrained] = useState(false)
+
+  async function handleReelUpload() {
+    if (!reelFile) return
+    setReelLoading(true)
+    setReelTranscript('')
+    setReelTrained(false)
+    try {
+      const form = new FormData()
+      form.append('file', reelFile)
+      form.append('category', reelCat)
+      const res = await fetch('/api/transcribe', { method: 'POST', body: form })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setReelTranscript(data.transcript)
+      showToast('Transcript бэлэн боллоо, сургаж байна...')
+
+      const tRes = await fetch('/api/train', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ script: data.transcript, category: data.category || 'ерөнхий', performance: 'unknown', note: 'Reel-ээс хөрвүүлсэн' })
+      })
+      const tData = await tRes.json()
+      if (tData.error) throw new Error(tData.error)
+      
+      setReelTrained(true)
+      showToast('Амжилттай сурлаа ✓')
+      fetchKB()
+    } catch (e) {
+      showToast('Алдаа: ' + (e as Error).message)
+    }
+    setReelLoading(false)
+  }
 
   const inputStyle = {
     backgroundColor: 'var(--bg-input)',
@@ -481,6 +522,57 @@ export default function Home() {
             </div>
           )}
 
+          {/* ── REEL ── */}
+          {active === 'reel' && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                <h1 style={{ fontSize: '28px', fontWeight: 600, letterSpacing: '-0.02em', margin: 0 }}>Reel оруулах</h1>
+                <span className="badge-purple">ElevenLabs Scribe</span>
+              </div>
+              <p style={{ fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '32px' }}>Монгол Reel-ийн аудио оруулна → Transcript гарна → Script болгон сургана</p>
+              
+              <Field label="Аудио / Видео файл">
+                <input 
+                  type="file" 
+                  accept="audio/*,video/*"
+                  onChange={e => setReelFile(e.target.files?.[0] || null)}
+                  style={{...inputStyle, padding: '10px'}} 
+                />
+              </Field>
+              
+              <Field label="Ангилал">
+                <input 
+                  style={inputStyle} 
+                  value={reelCat} 
+                  onChange={e => setReelCat(e.target.value)} 
+                  placeholder="жнь: подкаст, фитнесс" 
+                />
+              </Field>
+              
+              <button onClick={handleReelUpload} disabled={reelLoading || !reelFile} className="btn-primary" style={{ marginTop: '24px' }}>
+                {reelLoading ? 'Уншиж байна...' : 'Transcript гаргаж сургах →'}
+              </button>
+
+              {(reelTranscript || reelTrained) && (
+                <div className="minimal-card" style={{ marginTop: '40px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 500 }}>
+                      Хөрвүүлэлт & Сургалт {reelTrained && '✓'}
+                    </span>
+                  </div>
+                  <pre style={{ fontSize: '14px', lineHeight: '1.6', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0, padding: '16px', backgroundColor: 'var(--bg-input)', borderRadius: '8px' }}>
+                    {reelTranscript}
+                  </pre>
+                  {reelTrained && (
+                     <div style={{ marginTop: '16px', fontSize: '14px', color: 'var(--accent-purple)' }}>
+                       Амжилттай AI model-д суралцлаа! (Script түүх рүү орж шалгана уу)
+                     </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ── HISTORY ── */}
           {active === 'history' && (
             <div>
@@ -524,6 +616,7 @@ export default function Home() {
             { id: 'generate', label: 'Үүсгэх' },
             { id: 'knowledge', label: 'Мэдлэг' },
             { id: 'hooks', label: 'Hook' },
+            { id: 'reel', label: 'Reel' },
             { id: 'history', label: 'Түүх' }
           ].map(tab => (
             <button key={tab.id} onClick={() => setActive(tab.id)} style={{
