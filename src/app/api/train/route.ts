@@ -17,9 +17,9 @@ export async function POST(req: NextRequest) {
       .order('score', { ascending: false })
     const existPat = existingPatterns?.map(p => p.content).join('\n') || ''
 
-    // Call Claude API
-    const apiKey = process.env.ANTHROPIC_API_KEY
-    if (!apiKey) return NextResponse.json({ error: 'ANTHROPIC_API_KEY not set' }, { status: 500 })
+    // Call Fireworks API
+    const apiKey = process.env.FIREWORKS_API_KEY
+    if (!apiKey) return NextResponse.json({ error: 'FIREWORKS_API_KEY not set' }, { status: 500 })
 
     const system = `Та Монгол UGC рекламын мэргэжилтэн. Script задлаад ЗӨВХӨН JSON хариул. Backtick хэрэглэхгүй.
 {
@@ -42,23 +42,24 @@ export async function POST(req: NextRequest) {
 ${note ? 'Тайлбар: ' + note : ''}
 ${existPat ? '\nОдоогийн pattern:\n' + existPat : ''}`
 
-    const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+    const claudeRes = await fetch('https://api.fireworks.ai/inference/v1/chat/completions', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'accounts/fireworks/models/qwen3-30b-a3b',
         max_tokens: 1200,
-        system,
-        messages: [{ role: 'user', content: user }],
-      }),
+        temperature: 0.7,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: user }
+        ]
+      })
     })
-
     const claudeData = await claudeRes.json()
-    const raw = claudeData.content?.find((b: { type: string }) => b.type === 'text')?.text || '{}'
+    const raw = claudeData.choices?.[0]?.message?.content || '{}'
 
     let analysis: Record<string, unknown>
     try {
