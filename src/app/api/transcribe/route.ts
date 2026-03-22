@@ -18,6 +18,13 @@ export async function POST(req: NextRequest) {
     } else {
       const { url } = await req.json()
       if (!url) return NextResponse.json({ error: 'URL required' }, { status: 400 })
+      
+      if (url && (url.includes('instagram.com') || url.includes('tiktok.com') || url.includes('facebook.com'))) {
+        return NextResponse.json({ 
+          error: 'Instagram/TikTok URL шууд дэмжихгүй. Видеог SaveVid.net-ээр татаж аваад файл upload хийнэ үү.' 
+        }, { status: 400 })
+      }
+
       const res = await fetch(url)
       if (!res.ok) return NextResponse.json({ error: 'URL-аас файл татаж чадсангүй' }, { status: 400 })
       audioBlob = await res.blob()
