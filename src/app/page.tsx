@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { HORMOZI_HOOKS, DEGEE_HOOKS, NOTION_PATTERNS } from '@/lib/knowledge'
 
+// ─── Types ────────────────────────────────────────────────────────────────
+
 interface KnowledgeItem { id: string; type: string; content: string; category: string; score: number }
 interface ScriptRecord { id: string; category: string; performance: string; analysis: Record<string, unknown>; created_at: string }
 interface KnowledgeCounts { patterns: number; hooks: number; ctas: number; scripts: number }
@@ -12,7 +14,8 @@ interface KnowledgeData {
 }
 interface Analysis {
   hook?: string; hook_type?: string; structure?: string; emotional_trigger?: string
-  cta_type?: string; why_works?: string; key_lesson?: string; patterns?: string[]
+  cta_type?: string; why_works?: string; key_lesson?: string
+  patterns?: string[]; hooks_extracted?: string[]; ctas_extracted?: string[]
 }
 
 const TONE_OPTS = [
@@ -22,43 +25,116 @@ const TONE_OPTS = [
   { v: 'urgency', l: 'Яаралтай' },
   { v: 'trust', l: 'Итгэл үнэмшил' },
   { v: 'funny', l: 'Хошин / casual' },
-  { v: 'compare', l: 'Өмнө / Дараа' },
+  { v: 'compare', l: 'Өмнө/Дараа' },
   { v: 'pain', l: 'Өвдөлтийн цэг' },
 ]
 
-const PERF = {
-  high: { cls: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20', l: 'Сайн' },
-  medium: { cls: 'bg-amber-500/10 text-amber-400 border border-amber-500/20', l: 'Дундаж' },
-  low: { cls: 'bg-red-500/10 text-red-400 border border-red-500/20', l: 'Муу' },
-  unknown: { cls: 'bg-slate-500/10 text-slate-400 border border-slate-500/20', l: '?' },
+const PERF_MAP: Record<string, { cls: string; l: string; color: string; bg: string }> = {
+  high: { cls: 'text-emerald-400 bg-emerald-400/10', l: 'Сайн', color: '#34d399', bg: 'rgba(52, 211, 153, 0.1)' },
+  medium: { cls: 'text-amber-400 bg-amber-400/10', l: 'Дундаж', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.1)' },
+  low: { cls: 'text-red-400 bg-red-400/10', l: 'Муу', color: '#f87171', bg: 'rgba(248, 113, 113, 0.1)' },
+  unknown: { cls: 'text-zinc-400 bg-zinc-400/10', l: '?', color: '#a1a1aa', bg: 'rgba(161, 161, 170, 0.1)' },
 }
 
-function NavDot({ active }: { active: boolean }) {
-  return (
-    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-colors ${active ? 'bg-teal-400' : 'bg-slate-700'}`} />
+// ─── Components ──────────────────────────────────────────────────────────
+
+function Sidebar({ active, setActive, counts }: {
+  active: string; setActive: (s: string) => void; counts: KnowledgeCounts | null
+}) {
+  const nav = (id: string, label: string) => (
+    <button
+      key={id}
+      onClick={() => setActive(id)}
+      className={`nav-item ${active === id ? 'active' : ''}`}
+      style={{
+        display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 16px', borderRadius: '6px',
+        color: active === id ? '#ffffff' : '#a1a1aa',
+        backgroundColor: active === id ? 'rgba(249, 115, 22, 0.1)' : 'transparent',
+        borderLeft: active === id ? '2px solid #F97316' : '2px solid transparent',
+        transition: 'all 0.2s ease', cursor: 'pointer', fontSize: '14px', fontWeight: 500, width: '100%', textAlign: 'left'
+      }}
+    >
+      <span style={{
+        width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
+        backgroundColor: active === id ? '#F97316' : '#3f3f46'
+      }} />
+      {label}
+    </button>
   )
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <div className="px-5 pt-4 pb-1.5 text-[10px] font-semibold text-slate-600 uppercase tracking-[0.1em]">{children}</div>
+  return (
+    <aside style={{
+      position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column',
+      borderRight: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: '#0F0F0F'
+    }}>
+      <div style={{ padding: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <div style={{ fontSize: '12px', fontWeight: 'bold', letterSpacing: '2px', color: '#F97316', textTransform: 'uppercase' }}>Mongul Script AI</div>
+        <div style={{ fontSize: '11px', color: '#a1a1aa', marginTop: '4px' }}>Notion + Hormozi + Дэгээ</div>
+      </div>
+      <div style={{ padding: '12px 8px' }}>
+        <div style={{ padding: '8px 16px', fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '2px' }}>Ажил</div>
+        {nav('train', 'Script сургах')}
+        {nav('generate', 'Script үүсгэх')}
+        <div style={{ padding: '8px 16px', fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '12px' }}>Мэдлэг</div>
+        {nav('knowledge', 'Мэдлэгийн сан')}
+        {nav('hooks', 'Hook санал')}
+        {nav('history', 'Script түүх')}
+      </div>
+      <div style={{ marginTop: 'auto', padding: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <div style={{ fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '12px' }}>Мэдлэгийн сан</div>
+        {[
+          { l: 'Script сурсан', v: counts?.scripts || 0, c: '#34d399' },
+          { l: 'Pattern', v: counts?.patterns || 0, c: '#34d399' },
+          { l: 'Hook хэлбэр', v: counts?.hooks || 0, c: '#34d399' },
+          { l: 'Hormozi hook', v: 30, c: '#fbbf24' },
+          { l: 'Дэгээ hook', v: 25, c: '#2dd4bf' },
+        ].map(({ l, v, c }) => (
+          <div key={l} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <span style={{ fontSize: '11px', color: '#a1a1aa' }}>{l}</span>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: c }}>{v}</span>
+          </div>
+        ))}
+      </div>
+    </aside>
+  )
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="mb-4">
-      <label className="block text-xs font-medium text-slate-500 mb-1.5 tracking-wide">{label}</label>
+    <div style={{ marginBottom: '16px' }}>
+      <label style={{ display: 'block', fontSize: '12px', color: '#a1a1aa', marginBottom: '6px' }}>{label}</label>
       {children}
     </div>
   )
 }
 
-const inp = 'w-full bg-white/[0.03] border border-white/[0.08] rounded-lg text-sm text-slate-200 px-3.5 py-2.5 outline-none focus:border-teal-500/40 focus:ring-2 focus:ring-teal-500/[0.06] transition-all placeholder:text-slate-600 font-["DM_Sans"]'
+function Toast({ msg }: { msg: string }) {
+  return msg ? (
+    <div style={{
+      position: 'fixed', bottom: '20px', right: '20px', backgroundColor: '#141414',
+      border: '1px solid rgba(249, 115, 22, 0.3)', borderRadius: '8px', padding: '10px 16px',
+      fontSize: '14px', color: '#ffffff', zIndex: 50, boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+    }}>
+      {msg}
+    </div>
+  ) : null
+}
+
+// ─── Main page ─────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const [tab, setTab] = useState('train')
+  const [active, setActive] = useState('train')
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
   const [toast, setToast] = useState('')
   const [kbData, setKbData] = useState<KnowledgeData | null>(null)
 
+  // Train state
   const [tScript, setTScript] = useState('')
   const [tCat, setTCat] = useState('')
   const [tPerf, setTPerf] = useState('high')
@@ -66,6 +142,7 @@ export default function Home() {
   const [tLoading, setTLoading] = useState(false)
   const [tAnalysis, setTAnalysis] = useState<Analysis | null>(null)
 
+  // Generate state
   const [gProd, setGProd] = useState('')
   const [gAud, setGAud] = useState('')
   const [gBen, setGBen] = useState('')
@@ -76,173 +153,160 @@ export default function Home() {
   const [gLoading, setGLoading] = useState(false)
   const [gResult, setGResult] = useState('')
 
+  // Hooks filter
   const [hookSearch, setHookSearch] = useState('')
   const [hookCat, setHookCat] = useState('all')
 
-  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2500) }
+  const inputStyle = {
+    backgroundColor: '#1A1A1A',
+    color: '#ffffff',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    borderRadius: '8px',
+    padding: '10px 14px',
+    fontSize: '14px',
+    width: '100%',
+    outline: 'none',
+    boxSizing: 'border-box' as const
+  }
+
+  const showToast = (msg: string) => {
+    setToast(msg)
+    setTimeout(() => setToast(''), 2500)
+  }
 
   const fetchKB = useCallback(async () => {
-    try { const r = await fetch('/api/knowledge'); const d = await r.json(); if (!d.error) setKbData(d) } catch {}
+    try {
+      const r = await fetch('/api/knowledge')
+      const d = await r.json()
+      if (!d.error) setKbData(d)
+    } catch {}
   }, [])
 
   useEffect(() => { fetchKB() }, [fetchKB])
-  useEffect(() => { if (tab === 'knowledge' || tab === 'history') fetchKB() }, [tab, fetchKB])
+  useEffect(() => {
+    if (active === 'knowledge' || active === 'history') fetchKB()
+  }, [active, fetchKB])
 
+  // ── Train ──
   async function trainScript() {
     if (!tScript.trim()) return
     setTLoading(true); setTAnalysis(null)
     try {
-      const r = await fetch('/api/train', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ script: tScript, category: tCat, performance: tPerf, note: tNote }) })
+      const r = await fetch('/api/train', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ script: tScript, category: tCat, performance: tPerf, note: tNote }),
+      })
       const d = await r.json()
       if (d.error) throw new Error(d.error)
-      setTAnalysis(d.analysis); setTScript(''); setTNote('')
-      showToast('Script сурлаа — Supabase-д хадгаллаа ✓'); fetchKB()
-    } catch (e) { showToast('Алдаа: ' + (e as Error).message) }
+      setTAnalysis(d.analysis)
+      setTScript(''); setTNote('')
+      showToast('Script сурлаа ✓')
+      fetchKB()
+    } catch (e) {
+      showToast('Алдаа: ' + (e as Error).message)
+    }
     setTLoading(false)
   }
 
+  // ── Generate ──
   async function generateScript() {
     if (!gProd.trim()) return
     setGLoading(true); setGResult('')
     try {
-      const r = await fetch('/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ product: gProd, audience: gAud, benefit: gBen, tone: gTone, length: gLen, variants: parseInt(gVar), structure: gStr }) })
+      const r = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product: gProd, audience: gAud, benefit: gBen, tone: gTone, length: gLen, variants: parseInt(gVar), structure: gStr }),
+      })
       const d = await r.json()
       if (d.error) throw new Error(d.error)
       setGResult(d.script)
-    } catch (e) { showToast('Алдаа: ' + (e as Error).message) }
+    } catch (e) {
+      showToast('Алдаа: ' + (e as Error).message)
+    }
     setGLoading(false)
   }
 
+  // ── Hook list ──
   const allHooks = [
     ...HORMOZI_HOOKS.map(h => ({ ...h, src: 'Hormozi' })),
     ...DEGEE_HOOKS.map(h => ({ ...h, src: 'Дэгээ' })),
     ...NOTION_PATTERNS.map(p => ({ cat: p.cat, text: p.text, src: 'Notion' })),
   ]
   const hookCats = ['all', ...Array.from(new Set(allHooks.map(h => h.cat)))]
-  const filteredHooks = allHooks.filter(h => (hookCat === 'all' || h.cat === hookCat) && (!hookSearch || h.text.toLowerCase().includes(hookSearch.toLowerCase()))).slice(0, 60)
-  const srcColor: Record<string, string> = { Hormozi: 'border-l-amber-500/50', Дэгээ: 'border-l-teal-500/50', Notion: 'border-l-violet-500/50' }
-  const srcText: Record<string, string> = { Hormozi: 'text-amber-400', Дэгээ: 'text-teal-400', Notion: 'text-violet-400' }
+  const filteredHooks = allHooks.filter(h => {
+    const matchCat = hookCat === 'all' || h.cat === hookCat
+    const matchQ = !hookSearch || h.text.toLowerCase().includes(hookSearch.toLowerCase())
+    return matchCat && matchQ
+  }).slice(0, 60)
 
-  const navs = [
-    { id: 'train', label: 'Script сургах', group: 'АЖИЛ' },
-    { id: 'generate', label: 'Script үүсгэх', group: '' },
-    { id: 'knowledge', label: 'Мэдлэгийн сан', group: 'МЭДЛЭГ' },
-    { id: 'hooks', label: 'Hook санал', group: '' },
-    { id: 'history', label: 'Script түүх', group: '' },
-  ]
+  const srcColor: Record<string, string> = { Hormozi: '#fbbf24', Дэгээ: '#2dd4bf', Notion: '#F97316' }
 
+  // ── Render ──
   return (
-    <div className="flex min-h-screen relative">
-      {/* Sidebar */}
-      <aside className="w-56 flex-shrink-0 sticky top-0 h-screen flex flex-col" style={{ background: 'rgba(8,11,15,0.95)', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-        {/* Logo */}
-        <div className="px-5 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <div className="flex items-center gap-2.5 mb-1">
-            <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #2dd4bf, #0d9488)' }}>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 4h10M3 8h7M3 12h5" stroke="#042f2e" strokeWidth="1.8" strokeLinecap="round"/></svg>
-            </div>
-            <span className="text-sm font-semibold text-white tracking-tight">Mongul Script</span>
-          </div>
-          <div className="text-[10px] text-slate-600 ml-8">Hormozi · Дэгээ · Notion</div>
-        </div>
-
-        {/* Nav */}
-        <nav className="flex-1 py-2 overflow-y-auto">
-          {navs.map((n, i) => (
-            <div key={n.id}>
-              {n.group && <SectionLabel>{n.group}</SectionLabel>}
-              <button onClick={() => setTab(n.id)} className={`nav-item w-full text-left ${tab === n.id ? 'active' : ''}`}>
-                <NavDot active={tab === n.id} />
-                {n.label}
-              </button>
-            </div>
-          ))}
-        </nav>
-
-        {/* Stats */}
-        <div className="p-5" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <div className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest mb-3">Мэдлэгийн сан</div>
-          {[
-            { l: 'Script сурсан', v: kbData?.counts.scripts || 0, c: 'text-teal-400' },
-            { l: 'Pattern', v: kbData?.counts.patterns || 0, c: 'text-teal-400' },
-            { l: 'Hook', v: kbData?.counts.hooks || 0, c: 'text-teal-400' },
-            { l: 'Hormozi hook', v: 30, c: 'text-amber-400' },
-            { l: 'Дэгээ hook', v: 25, c: 'text-teal-400' },
-          ].map(({ l, v, c }) => (
-            <div key={l} className="stat-row">
-              <span className="text-xs text-slate-600">{l}</span>
-              <span className={`text-xs font-semibold font-mono ${c}`}>{v}</span>
-            </div>
-          ))}
-        </div>
-      </aside>
-
-      {/* Main */}
-      <main className="flex-1 overflow-y-auto relative">
-        <div className="max-w-2xl mx-auto px-8 py-8">
+    <div style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: isMobile ? '1fr' : '250px 1fr', minHeight: '100vh', backgroundColor: '#0A0A0A', color: '#ffffff', paddingBottom: isMobile ? '80px' : '0' }}>
+      <div className="sidebar" style={{ display: isMobile ? 'none' : 'block' }}>
+        <Sidebar active={active} setActive={setActive} counts={kbData?.counts || null} />
+      </div>
+      <main className="main-content" style={{ overflowY: 'auto', padding: isMobile ? '16px' : '32px', width: '100%' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
 
           {/* ── TRAIN ── */}
-          {tab === 'train' && (
+          {active === 'train' && (
             <div>
-              <div className="mb-7">
-                <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-xl font-semibold text-white">Script сургах</h1>
-                  <span className="badge-teal">AI Training</span>
-                </div>
-                <p className="text-sm text-slate-500">Ажилласан script оруулна → AI задлаад pattern сурна → Supabase-д хадгална</p>
-              </div>
-
-              <div className="glass-card p-5 mb-4">
-                <Field label="Ажилласан script">
-                  <textarea rows={7} className={inp + ' resize-y leading-relaxed'} value={tScript} onChange={e => setTScript(e.target.value)}
-                    placeholder="жнь: Өвдөгний өвдөлтөөсөө одоо ямар ч асуудалгүй салах боломжтой болсон гээд боддоо..." />
-                </Field>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Ангилал"><input className={inp} value={tCat} onChange={e => setTCat(e.target.value)} placeholder="жнь: гоо сайхан, фитнесс" /></Field>
-                  <Field label="Үр дүн">
-                    <select className={inp} value={tPerf} onChange={e => setTPerf(e.target.value)}>
-                      <option value="high">Маш сайн ажилласан</option>
-                      <option value="medium">Дундаж</option>
-                      <option value="low">Муу ажилласан</option>
-                      <option value="unknown">Мэдэхгүй</option>
-                    </select>
-                  </Field>
-                </div>
-                <Field label="Яагаад ажилласан гэж боддог вэ? (заавал биш)">
-                  <input className={inp} value={tNote} onChange={e => setTNote(e.target.value)} placeholder="жнь: urgency нэмсэн, хувийн туршлага байсан" />
+              <h1 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '8px' }}>Script сургах</h1>
+              <p style={{ fontSize: '14px', color: '#a1a1aa', marginBottom: '32px' }}>Ажилласан script оруулна → AI задлаад pattern сурна → Supabase-д хадгална</p>
+              
+              <Field label="Ажилласан script оруул">
+                <textarea rows={7} style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={tScript} onChange={e => setTScript(e.target.value)}
+                  placeholder="жнь: Өвдөгний өвдөлтөөсөө одоо ямар ч асуудалгүй салах боломжтой болсон гээд боддоо..." />
+              </Field>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                <Field label="Ангилал"><input style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={tCat} onChange={e => setTCat(e.target.value)} placeholder="жнь: гоо сайхан, фитнесс" /></Field>
+                <Field label="Үр дүн">
+                  <select style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={tPerf} onChange={e => setTPerf(e.target.value)}>
+                    <option value="high" style={{background: '#1A1A1A', color: '#fff'}}>Маш сайн ажилласан</option>
+                    <option value="medium" style={{background: '#1A1A1A', color: '#fff'}}>Дундаж</option>
+                    <option value="low" style={{background: '#1A1A1A', color: '#fff'}}>Муу ажилласан</option>
+                    <option value="unknown" style={{background: '#1A1A1A', color: '#fff'}}>Мэдэхгүй</option>
+                  </select>
                 </Field>
               </div>
-
-              <button onClick={trainScript} disabled={tLoading || !tScript.trim()} className="btn-primary">
-                {tLoading ? <span className="dots"><span/><span/><span/></span> : 'Analyze хийж Supabase-д хадгалах →'}
+              <Field label="Яагаад ажилласан гэж боддог вэ? (заавал биш)">
+                <input style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={tNote} onChange={e => setTNote(e.target.value)} placeholder="жнь: хувийн туршлага байсан, urgency нэмсэн" />
+              </Field>
+              <button onClick={trainScript} disabled={tLoading || !tScript.trim()}
+                className="btn-primary"
+                style={{ width: '100%', marginTop: '16px', opacity: tLoading || !tScript.trim() ? 0.5 : 1 }}>
+                {tLoading ? 'Уншиж байна...' : 'Analyze хийж Supabase-д хадгалах →'}
               </button>
-
+              
               {tAnalysis && (
-                <div className="glass-card p-5 mt-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-                      <span className="text-xs font-medium text-teal-400 uppercase tracking-wider">Шинжилгээ — Supabase-д нэмэгдлээ</span>
-                    </div>
+                <div className="minimal-card" style={{ marginTop: '32px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <span style={{ fontSize: '11px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '2px' }}>Шинжилгээ — Supabase-д нэмэгдлээ ✓</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     {[
-                      { k: `Hook · ${tAnalysis.hook_type || '?'}`, v: tAnalysis.hook },
+                      { k: `Hook (${tAnalysis.hook_type || '?'})`, v: tAnalysis.hook },
                       { k: 'Сэтгэл зүйн арга', v: tAnalysis.emotional_trigger },
-                      { k: 'CTA төрөл', v: tAnalysis.cta_type },
+                      { k: 'CTA', v: tAnalysis.cta_type },
                       { k: 'Бүтэц', v: tAnalysis.structure },
                       { k: 'Яагаад ажиллаж байна', v: tAnalysis.why_works, full: true },
                       { k: 'Гол сургамж', v: tAnalysis.key_lesson, full: true, accent: true },
-                    ].filter(x => x.v).map(({ k, v, full, accent }) => (
-                      <div key={k} className={`analysis-card ${full ? 'col-span-2' : ''}`}>
-                        <div className="text-[10px] text-slate-600 uppercase tracking-wider font-medium mb-1.5">{k}</div>
-                        <div className={`text-sm leading-relaxed ${accent ? 'text-teal-400 font-medium' : 'text-slate-300'}`}>{v}</div>
+                    ].map(({ k, v, full, accent }) => v ? (
+                      <div key={k} style={{ backgroundColor: '#1A1A1A', borderRadius: '8px', padding: '16px', gridColumn: full ? 'span 2' : 'span 1' }}>
+                        <div style={{ fontSize: '10px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px' }}>{k}</div>
+                        <div style={{ fontSize: '14px', lineHeight: '1.5', color: accent ? '#F97316' : '#e4e4e7' }}>{v}</div>
                       </div>
-                    ))}
+                    ) : null)}
                     {tAnalysis.patterns?.length ? (
-                      <div className="col-span-2 analysis-card">
-                        <div className="text-[10px] text-slate-600 uppercase tracking-wider font-medium mb-2">Сурсан pattern-ууд</div>
-                        <div className="flex flex-wrap gap-1.5">{tAnalysis.patterns.map(p => <span key={p} className="tag">{p}</span>)}</div>
+                      <div style={{ backgroundColor: '#1A1A1A', borderRadius: '8px', padding: '16px', gridColumn: 'span 2' }}>
+                        <div style={{ fontSize: '10px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>Сурсан pattern-ууд</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                          {tAnalysis.patterns.map(p => <span key={p} className="badge-orange">{p}</span>)}
+                        </div>
                       </div>
                     ) : null}
                   </div>
@@ -252,193 +316,185 @@ export default function Home() {
           )}
 
           {/* ── GENERATE ── */}
-          {tab === 'generate' && (
+          {active === 'generate' && (
             <div>
-              <div className="mb-7">
-                <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-xl font-semibold text-white">Script үүсгэх</h1>
-                  <span className="badge-teal">AI Generate</span>
-                </div>
-                <p className="text-sm text-slate-500">Supabase + Hormozi + Дэгээ мэдлэгээр шинэ script үүсгэнэ</p>
-              </div>
-
-              {kbData && kbData.counts.scripts > 0 && (
-                <div className="glass-card p-4 mb-5">
-                  <div className="flex justify-between items-center mb-2.5">
-                    <span className="text-sm font-medium text-slate-300">Мэдлэгийн сан</span>
-                    <span className="text-xs text-slate-500 font-mono">{kbData.counts.scripts} script · {kbData.counts.patterns} pattern</span>
+              <h1 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '8px' }}>Script үүсгэх</h1>
+              <p style={{ fontSize: '14px', color: '#a1a1aa', marginBottom: '32px' }}>Supabase + Hormozi + Дэгээ мэдлэгээр шинэ script үүсгэнэ</p>
+              
+              {kbData?.counts && kbData.counts.scripts > 0 && (
+                <div className="minimal-card" style={{ marginBottom: '24px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 500 }}>Мэдлэгийн сан</span>
+                    <span style={{ fontSize: '12px', color: '#a1a1aa' }}>{kbData.counts.scripts} script сурсан</span>
                   </div>
-                  <div className="h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                    <div className="h-full rounded-full transition-all duration-500" style={{ width: Math.min(100, kbData.counts.scripts / 20 * 100) + '%', background: 'linear-gradient(90deg, #2dd4bf, #0d9488)' }} />
+                  <div style={{ height: '4px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: Math.min(100, kbData.counts.scripts / 20 * 100) + '%', background: 'linear-gradient(90deg, #F97316, #ea580c)' }} />
                   </div>
                 </div>
               )}
-
-              <div className="glass-card p-5 mb-3">
-                <div className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-4">Бүтээгдэхүүн</div>
-                <div className="grid grid-cols-2 gap-3 mb-0">
-                  <Field label="Бүтээгдэхүүн / үйлчилгээ"><input className={inp} value={gProd} onChange={e => setGProd(e.target.value)} placeholder="жнь: LED гэрэл маск" /></Field>
-                  <Field label="Target audience"><input className={inp} value={gAud} onChange={e => setGAud(e.target.value)} placeholder="жнь: 25-40 насны эмэгтэй" /></Field>
+              
+              <div className="minimal-card" style={{ marginBottom: '20px' }}>
+                <div style={{ fontSize: '11px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '16px' }}>Бүтээгдэхүүн</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <Field label="Бүтээгдэхүүн / үйлчилгээ"><input style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={gProd} onChange={e => setGProd(e.target.value)} placeholder="жнь: LED гэрэл маск" /></Field>
+                  <Field label="Target audience"><input style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={gAud} onChange={e => setGAud(e.target.value)} placeholder="жнь: 25-40 насны эмэгтэй" /></Field>
                 </div>
-                <Field label="Давуу тал"><input className={inp} value={gBen} onChange={e => setGBen(e.target.value)} placeholder="жнь: 7 хоногт үр дүн, гэртээ ашиглах" /></Field>
+                <Field label="Давуу тал"><input style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={gBen} onChange={e => setGBen(e.target.value)} placeholder="жнь: 7 хоногт үр дүн, гэртээ ашиглах" /></Field>
               </div>
-
-              <div className="glass-card p-5 mb-3">
-                <div className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-3">Tone</div>
-                <div className="flex flex-wrap gap-2">
+              
+              <div className="minimal-card" style={{ marginBottom: '20px' }}>
+                <div style={{ fontSize: '11px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '16px' }}>Tone</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                   {TONE_OPTS.map(({ v, l }) => (
-                    <button key={v} onClick={() => setGTone(v)} className={`chip ${gTone === v ? 'sel' : ''}`}>{l}</button>
+                    <button key={v} onClick={() => setGTone(v)} className={`tag ${gTone === v ? 'active' : ''}`}>
+                      {l}
+                    </button>
                   ))}
                 </div>
               </div>
-
-              <div className="grid grid-cols-3 gap-3 mb-5">
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
                 <Field label="Урт">
-                  <select className={inp} value={gLen} onChange={e => setGLen(e.target.value)}>
-                    <option value="15">15сек (~35 үг)</option>
-                    <option value="30">30сек (~70 үг)</option>
-                    <option value="60">60сек (~130 үг)</option>
+                  <select style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={gLen} onChange={e => setGLen(e.target.value)}>
+                    <option value="15" style={{background: '#1A1A1A', color: '#fff'}}>15сек (~35 үг)</option>
+                    <option value="30" style={{background: '#1A1A1A', color: '#fff'}}>30сек (~70 үг)</option>
+                    <option value="60" style={{background: '#1A1A1A', color: '#fff'}}>60сек (~130 үг)</option>
                   </select>
                 </Field>
-                <Field label="Хувилбар">
-                  <select className={inp} value={gVar} onChange={e => setGVar(e.target.value)}>
-                    <option value="1">1</option>
-                    <option value="3">3</option>
-                    <option value="5">5</option>
+                <Field label="Хувилбар тоо">
+                  <select style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={gVar} onChange={e => setGVar(e.target.value)}>
+                    <option value="1" style={{background: '#1A1A1A', color: '#fff'}}>1</option>
+                    <option value="3" style={{background: '#1A1A1A', color: '#fff'}}>3</option>
+                    <option value="5" style={{background: '#1A1A1A', color: '#fff'}}>5</option>
                   </select>
                 </Field>
                 <Field label="Бүтэц">
-                  <select className={inp} value={gStr} onChange={e => setGStr(e.target.value)}>
-                    <option value="std">HOOK→АСУУДАЛ→CTA</option>
-                    <option value="story">Түүх→Эргэлт→CTA</option>
-                    <option value="before">Өмнө→Одоо→CTA</option>
-                    <option value="notion">Notion бүрэн бүтэц</option>
+                  <select style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={gStr} onChange={e => setGStr(e.target.value)}>
+                    <option value="std" style={{background: '#1A1A1A', color: '#fff'}}>HOOK→АСУУДАЛ→CTA</option>
+                    <option value="story" style={{background: '#1A1A1A', color: '#fff'}}>Түүх→Эргэлт→CTA</option>
+                    <option value="before" style={{background: '#1A1A1A', color: '#fff'}}>Өмнө→Одоо→CTA</option>
+                    <option value="notion" style={{background: '#1A1A1A', color: '#fff'}}>Notion бүрэн бүтэц</option>
                   </select>
                 </Field>
               </div>
-
-              <button onClick={generateScript} disabled={gLoading || !gProd.trim()} className="btn-primary">
-                {gLoading ? <span className="dots"><span/><span/><span/></span> : 'Сурсан мэдлэгээр script үүсгэх →'}
+              
+              <button onClick={generateScript} disabled={gLoading || !gProd.trim()} className="btn-primary" style={{ width: '100%', opacity: gLoading || !gProd.trim() ? 0.5 : 1 }}>
+                {gLoading ? 'Үүсгэж байна...' : 'Сурсан мэдлэгээр script үүсгэх →'}
               </button>
-
+              
               {gResult && (
-                <div className="glass-card p-5 mt-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-teal-400" />
-                      <span className="text-xs font-medium text-teal-400 uppercase tracking-wider">Үүсгэсэн script</span>
-                    </div>
-                    <button onClick={() => { navigator.clipboard.writeText(gResult); showToast('Хуулагдлаа ✓') }} className="btn-ghost">Хуулах</button>
+                <div className="minimal-card" style={{ marginTop: '32px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <span style={{ fontSize: '11px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '2px' }}>Үүсгэсэн script</span>
+                    <button onClick={() => { navigator.clipboard.writeText(gResult); showToast('Хуулагдлаа ✓') }} className="btn-ghost">
+                      Хуулах
+                    </button>
                   </div>
-                  <pre className="result-output">{gResult}</pre>
+                  <pre style={{ fontSize: '14px', lineHeight: '1.6', color: '#e4e4e7', whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 }}>{gResult}</pre>
                 </div>
               )}
             </div>
           )}
 
           {/* ── KNOWLEDGE ── */}
-          {tab === 'knowledge' && (
+          {active === 'knowledge' && (
             <div>
-              <div className="mb-7">
-                <h1 className="text-xl font-semibold text-white mb-2">Мэдлэгийн сан</h1>
-                <p className="text-sm text-slate-500">Supabase-д хадгалагдсан бүх pattern, hook, CTA. Score өндөр = generate-д илүү нөлөөлнө.</p>
-              </div>
+              <h1 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '8px' }}>Мэдлэгийн сан</h1>
+              <p style={{ fontSize: '14px', color: '#a1a1aa', marginBottom: '32px' }}>Supabase-д хадгалагдсан бүх мэдлэг. Score өндөр байх тусам generate-д илүү нөлөөлнө.</p>
+              
               {!kbData || kbData.counts.scripts === 0 ? (
-                <div className="glass-card p-12 text-center">
-                  <div className="w-10 h-10 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: 'rgba(45,212,191,0.1)' }}>
-                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M3 4h10M3 8h7M3 12h5" stroke="#2dd4bf" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                  </div>
-                  <p className="text-slate-500 text-sm">Одоохондоо сурсан зүйл алга</p>
-                  <p className="text-slate-600 text-xs mt-1">Script сургах таб дээр script оруулж эхлэ</p>
-                </div>
+                <div style={{ textAlign: 'center', padding: '48px 0', color: '#71717a' }}>Одоохондоо сурсан зүйл алга. Script сургах таб дээр эхлэ.</div>
               ) : (
-                <div className="space-y-6">
+                <>
                   {[
-                    { title: 'Pattern', items: kbData.patterns, accent: 'border-l-teal-500/50' },
-                    { title: 'Hook хэлбэрүүд', items: kbData.hooks, accent: 'border-l-amber-500/50' },
-                    { title: 'CTA хэлбэрүүд', items: kbData.ctas, accent: 'border-l-emerald-500/50' },
-                    { title: 'Сэтгэл зүйн аргууд', items: kbData.triggers, accent: 'border-l-violet-500/50' },
-                  ].filter(s => s.items?.length).map(({ title, items, accent }) => (
-                    <div key={title}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">{title}</span>
-                        <span className="badge-teal">{items.length}</span>
+                    { title: 'Pattern-ууд', items: kbData.patterns, color: '#F97316' },
+                    { title: 'Hook хэлбэрүүд', items: kbData.hooks, color: '#fbbf24' },
+                    { title: 'CTA хэлбэрүүд', items: kbData.ctas, color: '#34d399' },
+                    { title: 'Сэтгэл зүйн аргууд', items: kbData.triggers, color: '#2dd4bf' },
+                  ].map(({ title, items, color }) => items?.length ? (
+                    <div key={title} style={{ marginBottom: '32px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '2px' }}>{title}</span>
+                        <span className="badge-orange" style={{ color: color, borderColor: color, backgroundColor: `${color}15` }}>{items.length}</span>
                       </div>
                       {items.map(item => (
-                        <div key={item.id} className={`text-sm text-slate-300 px-3.5 py-2.5 rounded-lg mb-1.5 border-l-2 ${accent} leading-relaxed flex justify-between gap-3 transition-colors cursor-default`}
-                          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}
-                          onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(45,212,191,0.12)')}
-                          onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)')}>
+                        <div key={item.id} style={{ 
+                          fontSize: '14px', color: '#e4e4e7', padding: '12px 16px', borderRadius: '8px', 
+                          backgroundColor: '#141414', marginBottom: '8px', borderLeft: `2px solid ${color}`,
+                          lineHeight: '1.6', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px'
+                        }}>
                           <span>{item.content}</span>
-                          {item.score > 1 && <span className="text-[10px] text-teal-500 font-mono shrink-0">×{item.score}</span>}
+                          {item.score > 1 && <span style={{ fontSize: '11px', color: color, flexShrink: 0 }}>×{item.score}</span>}
                         </div>
                       ))}
                     </div>
-                  ))}
-                </div>
+                  ) : null)}
+                </>
               )}
             </div>
           )}
 
           {/* ── HOOKS ── */}
-          {tab === 'hooks' && (
+          {active === 'hooks' && (
             <div>
-              <div className="mb-7">
-                <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-xl font-semibold text-white">Hook санал</h1>
-                  <span className="badge-teal">{allHooks.length} hook</span>
-                </div>
-                <p className="text-sm text-slate-500">Дарахад clipboard-руу хуулна. Generate хийхэд автоматаар ашиглагдана.</p>
-              </div>
-              <input className={inp + ' mb-4'} placeholder="Хайх..." value={hookSearch} onChange={e => setHookSearch(e.target.value)} />
-              <div className="flex flex-wrap gap-1.5 mb-5">
-                {hookCats.slice(0, 14).map(c => (
-                  <button key={c} onClick={() => setHookCat(c)} className={`chip ${hookCat === c ? 'sel' : ''}`}>{c === 'all' ? 'Бүгд' : c}</button>
+              <h1 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '8px' }}>Hook санал</h1>
+              <p style={{ fontSize: '14px', color: '#a1a1aa', marginBottom: '32px' }}>Hormozi · Дэгээ · Notion — generate хийхэд автоматаар ашиглагдана</p>
+              
+              <input style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} placeholder="Хайх..." value={hookSearch} onChange={e => setHookSearch(e.target.value)} />
+              
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
+                {hookCats.slice(0, 12).map(c => (
+                  <button key={c} onClick={() => setHookCat(c)} className={`tag ${hookCat === c ? 'active' : ''}`}>
+                    {c === 'all' ? 'Бүгд' : c}
+                  </button>
                 ))}
               </div>
-              <div className="space-y-1.5">
-                {filteredHooks.map((h, i) => (
-                  <div key={i} onClick={() => { navigator.clipboard.writeText(h.text); showToast('Хуулагдлаа ✓') }}
-                    className={`text-sm text-slate-300 px-3.5 py-2.5 rounded-lg border-l-2 ${srcColor[h.src]} leading-relaxed cursor-pointer transition-all group`}
-                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(45,212,191,0.12)' }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)' }}>
-                    {h.text}
-                    <div className={`text-[10px] mt-1 font-medium ${srcText[h.src]}`}>{h.src} · {h.cat}</div>
+              
+              {filteredHooks.map((h, i) => (
+                <div key={i} onClick={() => { navigator.clipboard.writeText(h.text); showToast('Хуулагдлаа ✓') }}
+                  style={{ 
+                    fontSize: '14px', color: '#e4e4e7', padding: '16px', borderRadius: '8px', 
+                    backgroundColor: '#141414', marginBottom: '8px', borderLeft: `2px solid ${srcColor[h.src] || '#F97316'}`,
+                    lineHeight: '1.6', cursor: 'pointer', transition: 'all 0.2s ease',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#1a1a1a')}
+                  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#141414')}
+                >
+                  {h.text}
+                  <div style={{ fontSize: '11px', marginTop: '8px', color: srcColor[h.src] || '#F97316' }}>
+                    {h.src} · {h.cat}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           )}
 
           {/* ── HISTORY ── */}
-          {tab === 'history' && (
+          {active === 'history' && (
             <div>
-              <div className="mb-7">
-                <h1 className="text-xl font-semibold text-white mb-2">Script түүх</h1>
-                <p className="text-sm text-slate-500">Supabase-д хадгалагдсан бүх script-үүд</p>
-              </div>
+              <h1 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '8px' }}>Script түүх</h1>
+              <p style={{ fontSize: '14px', color: '#a1a1aa', marginBottom: '32px' }}>Supabase-д хадгалагдсан бүх script-үүд</p>
+              
               {!kbData?.scripts?.length ? (
-                <div className="glass-card p-12 text-center text-slate-500 text-sm">Одоохондоо түүх алга.</div>
+                <div style={{ textAlign: 'center', padding: '48px 0', color: '#71717a' }}>Одоохондоо түүх алга.</div>
               ) : (
-                <div className="space-y-3">
-                  {kbData.scripts.map(s => {
-                    const p = PERF[s.performance as keyof typeof PERF] || PERF.unknown
-                    const lesson = s.analysis?.key_lesson as string
-                    return (
-                      <div key={s.id} className="glass-card p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex gap-2 items-center">
-                            <span className="text-sm font-semibold text-slate-200">{s.category}</span>
-                            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${p.cls}`}>{p.l}</span>
-                          </div>
-                          <span className="text-xs text-slate-600 font-mono">{new Date(s.created_at).toLocaleDateString('mn-MN')}</span>
+                kbData.scripts.map(s => {
+                  const p = PERF_MAP[s.performance] || PERF_MAP.unknown
+                  const lesson = s.analysis?.key_lesson as string
+                  return (
+                    <div key={s.id} className="minimal-card" style={{ marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                          <span style={{ fontSize: '15px', fontWeight: 600 }}>{s.category}</span>
+                          <span style={{ fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '20px', color: p.color, backgroundColor: p.bg }}>{p.l}</span>
                         </div>
-                        {lesson && <div className="text-sm text-teal-400 font-medium">→ {lesson}</div>}
+                        <span style={{ fontSize: '12px', color: '#71717a' }}>{new Date(s.created_at).toLocaleDateString('mn-MN')}</span>
                       </div>
-                    )
-                  })}
-                </div>
+                      {lesson && <div style={{ fontSize: '14px', color: '#F97316', lineHeight: '1.6' }}>→ {lesson}</div>}
+                    </div>
+                  )
+                })
               )}
             </div>
           )}
@@ -446,13 +502,36 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Toast */}
-      {toast && (
-        <div className="fixed bottom-5 right-5 z-50 text-sm px-4 py-2.5 rounded-lg font-medium" style={{ background: 'rgba(13,17,23,0.95)', border: '1px solid rgba(45,212,191,0.25)', color: '#2dd4bf', backdropFilter: 'blur(10px)' }}>
-          {toast}
+      {isMobile && (
+        <div className="mobile-nav" style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0, height: '70px',
+          backgroundColor: '#0F0F0F', borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          display: 'flex', justifyContent: 'space-around', alignItems: 'center', zIndex: 50
+        }}>
+          {[
+            { id: 'train', label: 'Script сургах' },
+            { id: 'generate', label: 'Script үүсгэх' },
+            { id: 'knowledge', label: 'Мэдлэгийн сан' },
+            { id: 'hooks', label: 'Hook санал' },
+            { id: 'history', label: 'Script түүх' }
+          ].map(tab => (
+            <button key={tab.id} onClick={() => setActive(tab.id)} style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px',
+              color: active === tab.id ? '#F97316' : '#a1a1aa',
+              fontSize: '10px', background: 'none', border: 'none', padding: '8px', flex: 1
+            }}>
+              <span style={{ fontSize: '18px' }}>{
+                tab.id === 'train' ? '📝' :
+                tab.id === 'generate' ? '✨' :
+                tab.id === 'knowledge' ? '🧠' :
+                tab.id === 'hooks' ? '🎣' : '📜'
+              }</span>
+              <span style={{ textAlign: 'center' }}>{tab.label}</span>
+            </button>
+          ))}
         </div>
       )}
+      <Toast msg={toast} />
     </div>
   )
 }
-
