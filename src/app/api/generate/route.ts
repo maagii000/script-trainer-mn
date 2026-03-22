@@ -88,7 +88,8 @@ Tone: ${TONE_MAP[tone] || TONE_MAP.emotional}
     const claudeData = await claudeRes.json()
     console.log('Fireworks response status:', claudeRes.status)
     console.log('Fireworks response:', JSON.stringify(claudeData).substring(0, 500))
-    const text = claudeData.choices?.[0]?.message?.content || 'Алдаа гарлаа.'
+    console.log('Full Fireworks response:', JSON.stringify(claudeData))
+    const text = claudeData.choices?.[0]?.message?.content || claudeData.error?.message || JSON.stringify(claudeData).substring(0, 200)
 
     return NextResponse.json({ script: text })
   } catch (e) {
