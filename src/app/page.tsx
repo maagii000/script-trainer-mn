@@ -167,6 +167,8 @@ export default function Home() {
   const [hookCat, setHookCat] = useState('all')
 
   // Reel State
+  const [reelMode, setReelMode] = useState<'file' | 'url'>('file')
+  const [reelUrl, setReelUrl] = useState('')
   const [reelFile, setReelFile] = useState<File | null>(null)
   const [reelCat, setReelCat] = useState('')
   const [reelLoading, setReelLoading] = useState(false)
@@ -174,15 +176,24 @@ export default function Home() {
   const [reelTrained, setReelTrained] = useState(false)
 
   async function handleReelUpload() {
-    if (!reelFile) return
+    if (reelMode === 'file' && !reelFile) return
+    if (reelMode === 'url' && !reelUrl.trim()) return
     setReelLoading(true)
     setReelTranscript('')
     setReelTrained(false)
     try {
-      const form = new FormData()
-      form.append('file', reelFile)
-      form.append('category', reelCat)
-      const res = await fetch('/api/transcribe', { method: 'POST', body: form })
+      let res
+      if (reelMode === 'file') {
+        const form = new FormData()
+        form.append('file', reelFile!)
+        res = await fetch('/api/transcribe', { method: 'POST', body: form })
+      } else {
+        res = await fetch('/api/transcribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: reelUrl })
+        })
+      }
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       setReelTranscript(data.transcript)
@@ -191,7 +202,7 @@ export default function Home() {
       const tRes = await fetch('/api/train', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ script: data.transcript, category: data.category || 'ерөнхий', performance: 'unknown', note: 'Reel-ээс хөрвүүлсэн' })
+        body: JSON.stringify({ script: data.transcript, category: reelCat || 'ерөнхий', performance: 'unknown', note: 'Reel-ээс хөрвүүлсэн' })
       })
       const tData = await tRes.json()
       if (tData.error) throw new Error(tData.error)
@@ -529,16 +540,32 @@ export default function Home() {
                 <h1 style={{ fontSize: '28px', fontWeight: 600, letterSpacing: '-0.02em', margin: 0 }}>Reel оруулах</h1>
                 <span className="badge-purple">ElevenLabs Scribe</span>
               </div>
-              <p style={{ fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '32px' }}>Монгол Reel-ийн аудио оруулна → Transcript гарна → Script болгон сургана</p>
+              <p style={{ fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '24px' }}>Монгол Reel-ийн аудио оруулна → Transcript гарна → Script болгон сургана</p>
               
-              <Field label="Аудио / Видео файл">
-                <input 
-                  type="file" 
-                  accept="audio/*,video/*"
-                  onChange={e => setReelFile(e.target.files?.[0] || null)}
-                  style={{...inputStyle, padding: '10px'}} 
-                />
-              </Field>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
+                <button onClick={() => setReelMode('file')} className={`tag ${reelMode === 'file' ? 'active' : ''}`}>Файл upload</button>
+                <button onClick={() => setReelMode('url')} className={`tag ${reelMode === 'url' ? 'active' : ''}`}>URL оруулах</button>
+              </div>
+
+              {reelMode === 'file' ? (
+                <Field label="Аудио / Видео файл">
+                  <input 
+                    type="file" 
+                    accept="audio/*,video/*"
+                    onChange={e => setReelFile(e.target.files?.[0] || null)}
+                    style={{...inputStyle, padding: '10px'}} 
+                  />
+                </Field>
+              ) : (
+                <Field label="URL холбоос">
+                  <input 
+                    style={inputStyle} 
+                    value={reelUrl} 
+                    onChange={e => setReelUrl(e.target.value)} 
+                    placeholder="https://..." 
+                  />
+                </Field>
+              )}
               
               <Field label="Ангилал">
                 <input 
@@ -549,7 +576,7 @@ export default function Home() {
                 />
               </Field>
               
-              <button onClick={handleReelUpload} disabled={reelLoading || !reelFile} className="btn-primary" style={{ marginTop: '24px' }}>
+              <button onClick={handleReelUpload} disabled={reelLoading || (reelMode === 'file' ? !reelFile : !reelUrl.trim())} className="btn-primary" style={{ marginTop: '24px' }}>
                 {reelLoading ? 'Уншиж байна...' : 'Transcript гаргаж сургах →'}
               </button>
 
