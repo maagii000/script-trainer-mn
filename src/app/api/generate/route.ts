@@ -75,7 +75,7 @@ Tone: ${TONE_MAP[tone] || TONE_MAP.emotional}
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'accounts/fireworks/models/qwen3-30b-a3b',
+        model: 'accounts/fireworks/models/qwen3-8b-instruct',
         max_tokens: 1600,
         temperature: 0.7,
         messages: [
