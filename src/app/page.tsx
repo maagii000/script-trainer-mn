@@ -30,11 +30,19 @@ const TONE_OPTS = [
 ]
 
 const PERF_MAP: Record<string, { cls: string; l: string; color: string; bg: string }> = {
-  high: { cls: 'text-emerald-400 bg-emerald-400/10', l: 'Сайн', color: '#34d399', bg: 'rgba(52, 211, 153, 0.1)' },
-  medium: { cls: 'text-amber-400 bg-amber-400/10', l: 'Дундаж', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.1)' },
-  low: { cls: 'text-red-400 bg-red-400/10', l: 'Муу', color: '#f87171', bg: 'rgba(248, 113, 113, 0.1)' },
-  unknown: { cls: 'text-zinc-400 bg-zinc-400/10', l: '?', color: '#a1a1aa', bg: 'rgba(161, 161, 170, 0.1)' },
+  high: { cls: 'text-emerald-400 bg-emerald-400/10', l: 'Сайн', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
+  medium: { cls: 'text-amber-400 bg-amber-400/10', l: 'Дундаж', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
+  low: { cls: 'text-red-400 bg-red-400/10', l: 'Муу', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' },
+  unknown: { cls: 'text-zinc-400 bg-zinc-400/10', l: '?', color: '#9ca3af', bg: 'rgba(156, 163, 175, 0.1)' },
 }
+
+const ICONS: Record<string, React.ReactNode> = {
+  train: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
+  generate: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1-1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>,
+  knowledge: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
+  hooks: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>,
+  history: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+};
 
 // ─── Components ──────────────────────────────────────────────────────────
 
@@ -48,49 +56,48 @@ function Sidebar({ active, setActive, counts }: {
       className={`nav-item ${active === id ? 'active' : ''}`}
       style={{
         display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 16px', borderRadius: '6px',
-        color: active === id ? '#ffffff' : '#a1a1aa',
-        backgroundColor: active === id ? 'rgba(249, 115, 22, 0.1)' : 'transparent',
-        borderLeft: active === id ? '2px solid #F97316' : '2px solid transparent',
+        color: active === id ? '#F1F0EF' : '#6B7280',
+        backgroundColor: active === id ? 'rgba(124, 58, 237, 0.1)' : 'transparent',
+        borderLeft: active === id ? '2px solid #7C3AED' : '2px solid transparent',
         transition: 'all 0.2s ease', cursor: 'pointer', fontSize: '14px', fontWeight: 500, width: '100%', textAlign: 'left'
       }}
     >
-      <span style={{
-        width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
-        backgroundColor: active === id ? '#F97316' : '#3f3f46'
-      }} />
+      <div style={{ color: active === id ? '#7C3AED' : '#6B7280', display: 'flex' }}>
+        {ICONS[id]}
+      </div>
       {label}
     </button>
   )
   return (
-    <aside style={{
+    <aside className="sidebar" style={{
       position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column',
-      borderRight: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: '#0F0F0F'
+      borderRight: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-sidebar)'
     }}>
-      <div style={{ padding: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
-        <div style={{ fontSize: '12px', fontWeight: 'bold', letterSpacing: '2px', color: '#F97316', textTransform: 'uppercase' }}>Mongul Script AI</div>
-        <div style={{ fontSize: '11px', color: '#a1a1aa', marginTop: '4px' }}>Notion + Hormozi + Дэгээ</div>
+      <div style={{ padding: '24px 20px', borderBottom: '1px solid var(--border-subtle)' }}>
+        <div style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '2px', color: '#7C3AED', textTransform: 'uppercase' }}>Mongol Script AI</div>
+        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>SaaS Edition</div>
       </div>
-      <div style={{ padding: '12px 8px' }}>
-        <div style={{ padding: '8px 16px', fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '2px' }}>Ажил</div>
+      <div style={{ padding: '16px 12px' }}>
+        <div style={{ padding: '8px 16px', fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>Ажил</div>
         {nav('train', 'Script сургах')}
         {nav('generate', 'Script үүсгэх')}
-        <div style={{ padding: '8px 16px', fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '12px' }}>Мэдлэг</div>
+        <div style={{ padding: '8px 16px', fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '16px', fontWeight: 600 }}>Мэдлэг</div>
         {nav('knowledge', 'Мэдлэгийн сан')}
         {nav('hooks', 'Hook санал')}
         {nav('history', 'Script түүх')}
       </div>
-      <div style={{ marginTop: 'auto', padding: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
-        <div style={{ fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '12px' }}>Мэдлэгийн сан</div>
+      <div style={{ marginTop: 'auto', padding: '24px 20px', borderTop: '1px solid var(--border-subtle)' }}>
+        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px', fontWeight: 600 }}>Мэдлэгийн сан</div>
         {[
-          { l: 'Script сурсан', v: counts?.scripts || 0, c: '#34d399' },
-          { l: 'Pattern', v: counts?.patterns || 0, c: '#34d399' },
-          { l: 'Hook хэлбэр', v: counts?.hooks || 0, c: '#34d399' },
-          { l: 'Hormozi hook', v: 30, c: '#fbbf24' },
-          { l: 'Дэгээ hook', v: 25, c: '#2dd4bf' },
+          { l: 'Script сурсан', v: counts?.scripts || 0, c: '#10b981' },
+          { l: 'Pattern', v: counts?.patterns || 0, c: '#10b981' },
+          { l: 'Hook хэлбэр', v: counts?.hooks || 0, c: '#10b981' },
+          { l: 'Hormozi hook', v: 30, c: '#f59e0b' },
+          { l: 'Дэгээ hook', v: 25, c: '#6366f1' },
         ].map(({ l, v, c }) => (
-          <div key={l} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <span style={{ fontSize: '11px', color: '#a1a1aa' }}>{l}</span>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: c }}>{v}</span>
+          <div key={l} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{l}</span>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: c }}>{v}</span>
           </div>
         ))}
       </div>
@@ -101,7 +108,7 @@ function Sidebar({ active, setActive, counts }: {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: '16px' }}>
-      <label style={{ display: 'block', fontSize: '12px', color: '#a1a1aa', marginBottom: '6px' }}>{label}</label>
+      <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 500 }}>{label}</label>
       {children}
     </div>
   )
@@ -110,9 +117,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function Toast({ msg }: { msg: string }) {
   return msg ? (
     <div style={{
-      position: 'fixed', bottom: '20px', right: '20px', backgroundColor: '#141414',
-      border: '1px solid rgba(249, 115, 22, 0.3)', borderRadius: '8px', padding: '10px 16px',
-      fontSize: '14px', color: '#ffffff', zIndex: 50, boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+      position: 'fixed', bottom: '24px', right: '24px', backgroundColor: 'var(--bg-card)',
+      border: '1px solid rgba(124, 58, 237, 0.3)', borderRadius: '8px', padding: '12px 20px',
+      fontSize: '14px', color: 'var(--text-primary)', zIndex: 50, boxShadow: '0 8px 30px rgba(0,0,0,0.5)'
     }}>
       {msg}
     </div>
@@ -158,13 +165,14 @@ export default function Home() {
   const [hookCat, setHookCat] = useState('all')
 
   const inputStyle = {
-    backgroundColor: '#1A1A1A',
-    color: '#ffffff',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'var(--bg-input)',
+    color: 'var(--text-primary)',
+    border: '1px solid var(--border-subtle)',
     borderRadius: '8px',
-    padding: '10px 14px',
+    padding: '12px 14px',
     fontSize: '14px',
     width: '100%',
+    fontFamily: 'inherit',
     outline: 'none',
     boxSizing: 'border-box' as const
   }
@@ -241,53 +249,53 @@ export default function Home() {
     return matchCat && matchQ
   }).slice(0, 60)
 
-  const srcColor: Record<string, string> = { Hormozi: '#fbbf24', Дэгээ: '#2dd4bf', Notion: '#F97316' }
+  const srcColor: Record<string, string> = { Hormozi: '#f59e0b', Дэгээ: '#6366f1', Notion: '#7C3AED' }
 
   // ── Render ──
   return (
-    <div style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: isMobile ? '1fr' : '250px 1fr', minHeight: '100vh', backgroundColor: '#0A0A0A', color: '#ffffff', paddingBottom: isMobile ? '80px' : '0' }}>
+    <div style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: isMobile ? '1fr' : '220px 1fr', minHeight: '100vh', backgroundColor: 'var(--bg-dark)', color: 'var(--text-primary)', paddingBottom: isMobile ? '80px' : '0' }}>
       <div className="sidebar" style={{ display: isMobile ? 'none' : 'block' }}>
         <Sidebar active={active} setActive={setActive} counts={kbData?.counts || null} />
       </div>
-      <main className="main-content" style={{ overflowY: 'auto', padding: isMobile ? '16px' : '32px', width: '100%' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <main className="main-content" style={{ overflowY: 'auto', padding: isMobile ? '16px' : '40px', width: '100%' }}>
+        <div style={{ maxWidth: '680px', margin: '0 auto' }}>
 
           {/* ── TRAIN ── */}
           {active === 'train' && (
             <div>
-              <h1 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '8px' }}>Script сургах</h1>
-              <p style={{ fontSize: '14px', color: '#a1a1aa', marginBottom: '32px' }}>Ажилласан script оруулна → AI задлаад pattern сурна → Supabase-д хадгална</p>
+              <h1 style={{ fontSize: '28px', fontWeight: 600, marginBottom: '8px', letterSpacing: '-0.02em' }}>Script сургах</h1>
+              <p style={{ fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '32px' }}>Ажилласан script оруулна. AI задлаад pattern сурна.</p>
               
               <Field label="Ажилласан script оруул">
-                <textarea rows={7} style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={tScript} onChange={e => setTScript(e.target.value)}
+                <textarea rows={7} style={inputStyle} value={tScript} onChange={e => setTScript(e.target.value)}
                   placeholder="жнь: Өвдөгний өвдөлтөөсөө одоо ямар ч асуудалгүй салах боломжтой болсон гээд боддоо..." />
               </Field>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                <Field label="Ангилал"><input style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={tCat} onChange={e => setTCat(e.target.value)} placeholder="жнь: гоо сайхан, фитнесс" /></Field>
+                <Field label="Ангилал"><input style={inputStyle} value={tCat} onChange={e => setTCat(e.target.value)} placeholder="жнь: гоо сайхан" /></Field>
                 <Field label="Үр дүн">
-                  <select style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={tPerf} onChange={e => setTPerf(e.target.value)}>
-                    <option value="high" style={{background: '#1A1A1A', color: '#fff'}}>Маш сайн ажилласан</option>
-                    <option value="medium" style={{background: '#1A1A1A', color: '#fff'}}>Дундаж</option>
-                    <option value="low" style={{background: '#1A1A1A', color: '#fff'}}>Муу ажилласан</option>
-                    <option value="unknown" style={{background: '#1A1A1A', color: '#fff'}}>Мэдэхгүй</option>
+                  <select style={inputStyle} value={tPerf} onChange={e => setTPerf(e.target.value)}>
+                    <option value="high">Маш сайн ажилласан</option>
+                    <option value="medium">Дундаж</option>
+                    <option value="low">Муу ажилласан</option>
+                    <option value="unknown">Мэдэхгүй</option>
                   </select>
                 </Field>
               </div>
               <Field label="Яагаад ажилласан гэж боддог вэ? (заавал биш)">
-                <input style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={tNote} onChange={e => setTNote(e.target.value)} placeholder="жнь: хувийн туршлага байсан, urgency нэмсэн" />
+                <input style={inputStyle} value={tNote} onChange={e => setTNote(e.target.value)} placeholder="жнь: хувийн туршлага байсан, urgency нэмсэн" />
               </Field>
               <button onClick={trainScript} disabled={tLoading || !tScript.trim()}
                 className="btn-primary"
-                style={{ width: '100%', marginTop: '16px', opacity: tLoading || !tScript.trim() ? 0.5 : 1 }}>
-                {tLoading ? 'Уншиж байна...' : 'Analyze хийж Supabase-д хадгалах →'}
+                style={{ marginTop: '24px' }}>
+                {tLoading ? 'Уншиж байна...' : 'Analyze хийж хадгалах →'}
               </button>
               
               {tAnalysis && (
-                <div className="minimal-card" style={{ marginTop: '32px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <span style={{ fontSize: '11px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '2px' }}>Шинжилгээ — Supabase-д нэмэгдлээ ✓</span>
+                <div className="minimal-card" style={{ marginTop: '40px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 500 }}>Шинжилгээ — Хадгалагдлаа ✓</span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     {[
                       { k: `Hook (${tAnalysis.hook_type || '?'})`, v: tAnalysis.hook },
                       { k: 'Сэтгэл зүйн арга', v: tAnalysis.emotional_trigger },
@@ -296,16 +304,16 @@ export default function Home() {
                       { k: 'Яагаад ажиллаж байна', v: tAnalysis.why_works, full: true },
                       { k: 'Гол сургамж', v: tAnalysis.key_lesson, full: true, accent: true },
                     ].map(({ k, v, full, accent }) => v ? (
-                      <div key={k} style={{ backgroundColor: '#1A1A1A', borderRadius: '8px', padding: '16px', gridColumn: full ? 'span 2' : 'span 1' }}>
-                        <div style={{ fontSize: '10px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px' }}>{k}</div>
-                        <div style={{ fontSize: '14px', lineHeight: '1.5', color: accent ? '#F97316' : '#e4e4e7' }}>{v}</div>
+                      <div key={k} style={{ backgroundColor: 'var(--bg-input)', borderRadius: '8px', padding: '16px', gridColumn: full ? 'span 2' : 'span 1' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', fontWeight: 500 }}>{k}</div>
+                        <div style={{ fontSize: '14px', lineHeight: '1.6', color: accent ? 'var(--accent-purple)' : 'var(--text-primary)' }}>{v}</div>
                       </div>
                     ) : null)}
                     {tAnalysis.patterns?.length ? (
-                      <div style={{ backgroundColor: '#1A1A1A', borderRadius: '8px', padding: '16px', gridColumn: 'span 2' }}>
-                        <div style={{ fontSize: '10px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>Сурсан pattern-ууд</div>
+                      <div style={{ backgroundColor: 'var(--bg-input)', borderRadius: '8px', padding: '16px', gridColumn: 'span 2' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px', fontWeight: 500 }}>Сурсан pattern-ууд</div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                          {tAnalysis.patterns.map(p => <span key={p} className="badge-orange">{p}</span>)}
+                          {tAnalysis.patterns.map(p => <span key={p} className="badge-purple">{p}</span>)}
                         </div>
                       </div>
                     ) : null}
@@ -318,32 +326,32 @@ export default function Home() {
           {/* ── GENERATE ── */}
           {active === 'generate' && (
             <div>
-              <h1 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '8px' }}>Script үүсгэх</h1>
-              <p style={{ fontSize: '14px', color: '#a1a1aa', marginBottom: '32px' }}>Supabase + Hormozi + Дэгээ мэдлэгээр шинэ script үүсгэнэ</p>
+              <h1 style={{ fontSize: '28px', fontWeight: 600, marginBottom: '8px', letterSpacing: '-0.02em' }}>Script үүсгэх</h1>
+              <p style={{ fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '32px' }}>Мэдлэгийн сан + Hormozi + Дэгээ ашиглана.</p>
               
               {kbData?.counts && kbData.counts.scripts > 0 && (
-                <div className="minimal-card" style={{ marginBottom: '24px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <div className="minimal-card" style={{ marginBottom: '24px', padding: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <span style={{ fontSize: '14px', fontWeight: 500 }}>Мэдлэгийн сан</span>
-                    <span style={{ fontSize: '12px', color: '#a1a1aa' }}>{kbData.counts.scripts} script сурсан</span>
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{kbData.counts.scripts} script сурсан</span>
                   </div>
-                  <div style={{ height: '4px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: Math.min(100, kbData.counts.scripts / 20 * 100) + '%', background: 'linear-gradient(90deg, #F97316, #ea580c)' }} />
+                  <div style={{ height: '6px', backgroundColor: 'var(--border-subtle)', borderRadius: '99px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: Math.min(100, kbData.counts.scripts / 20 * 100) + '%', background: 'linear-gradient(90deg, var(--accent-purple), var(--accent-purple-hover))' }} />
                   </div>
                 </div>
               )}
               
-              <div className="minimal-card" style={{ marginBottom: '20px' }}>
-                <div style={{ fontSize: '11px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '16px' }}>Бүтээгдэхүүн</div>
+              <div className="minimal-card" style={{ marginBottom: '24px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '20px', fontWeight: 600 }}>Бүтээгдэхүүн</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                  <Field label="Бүтээгдэхүүн / үйлчилгээ"><input style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={gProd} onChange={e => setGProd(e.target.value)} placeholder="жнь: LED гэрэл маск" /></Field>
-                  <Field label="Target audience"><input style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={gAud} onChange={e => setGAud(e.target.value)} placeholder="жнь: 25-40 насны эмэгтэй" /></Field>
+                  <Field label="Бүтээгдэхүүн / үйлчилгээ"><input style={inputStyle} value={gProd} onChange={e => setGProd(e.target.value)} placeholder="жнь: LED гэрэл" /></Field>
+                  <Field label="Target audience"><input style={inputStyle} value={gAud} onChange={e => setGAud(e.target.value)} placeholder="жнь: 25-40 нас" /></Field>
                 </div>
-                <Field label="Давуу тал"><input style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={gBen} onChange={e => setGBen(e.target.value)} placeholder="жнь: 7 хоногт үр дүн, гэртээ ашиглах" /></Field>
+                <Field label="Давуу тал"><input style={inputStyle} value={gBen} onChange={e => setGBen(e.target.value)} placeholder="жнь: 7 хоногт үр дүн" /></Field>
               </div>
               
-              <div className="minimal-card" style={{ marginBottom: '20px' }}>
-                <div style={{ fontSize: '11px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '16px' }}>Tone</div>
+              <div className="minimal-card" style={{ marginBottom: '24px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '20px', fontWeight: 600 }}>Tone</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                   {TONE_OPTS.map(({ v, l }) => (
                     <button key={v} onClick={() => setGTone(v)} className={`tag ${gTone === v ? 'active' : ''}`}>
@@ -353,44 +361,44 @@ export default function Home() {
                 </div>
               </div>
               
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '32px' }}>
                 <Field label="Урт">
-                  <select style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={gLen} onChange={e => setGLen(e.target.value)}>
-                    <option value="15" style={{background: '#1A1A1A', color: '#fff'}}>15сек (~35 үг)</option>
-                    <option value="30" style={{background: '#1A1A1A', color: '#fff'}}>30сек (~70 үг)</option>
-                    <option value="60" style={{background: '#1A1A1A', color: '#fff'}}>60сек (~130 үг)</option>
+                  <select style={inputStyle} value={gLen} onChange={e => setGLen(e.target.value)}>
+                    <option value="15">15сек (~35 үг)</option>
+                    <option value="30">30сек (~70 үг)</option>
+                    <option value="60">60сек (~130 үг)</option>
                   </select>
                 </Field>
                 <Field label="Хувилбар тоо">
-                  <select style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={gVar} onChange={e => setGVar(e.target.value)}>
-                    <option value="1" style={{background: '#1A1A1A', color: '#fff'}}>1</option>
-                    <option value="3" style={{background: '#1A1A1A', color: '#fff'}}>3</option>
-                    <option value="5" style={{background: '#1A1A1A', color: '#fff'}}>5</option>
+                  <select style={inputStyle} value={gVar} onChange={e => setGVar(e.target.value)}>
+                    <option value="1">1</option>
+                    <option value="3">3</option>
+                    <option value="5">5</option>
                   </select>
                 </Field>
                 <Field label="Бүтэц">
-                  <select style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} value={gStr} onChange={e => setGStr(e.target.value)}>
-                    <option value="std" style={{background: '#1A1A1A', color: '#fff'}}>HOOK→АСУУДАЛ→CTA</option>
-                    <option value="story" style={{background: '#1A1A1A', color: '#fff'}}>Түүх→Эргэлт→CTA</option>
-                    <option value="before" style={{background: '#1A1A1A', color: '#fff'}}>Өмнө→Одоо→CTA</option>
-                    <option value="notion" style={{background: '#1A1A1A', color: '#fff'}}>Notion бүрэн бүтэц</option>
+                  <select style={inputStyle} value={gStr} onChange={e => setGStr(e.target.value)}>
+                    <option value="std">HOOK→АСУУДАЛ→CTA</option>
+                    <option value="story">Түүх→Эргэлт→CTA</option>
+                    <option value="before">Өмнө→Одоо→CTA</option>
+                    <option value="notion">Notion бүрэн бүтэц</option>
                   </select>
                 </Field>
               </div>
               
-              <button onClick={generateScript} disabled={gLoading || !gProd.trim()} className="btn-primary" style={{ width: '100%', opacity: gLoading || !gProd.trim() ? 0.5 : 1 }}>
-                {gLoading ? 'Үүсгэж байна...' : 'Сурсан мэдлэгээр script үүсгэх →'}
+              <button onClick={generateScript} disabled={gLoading || !gProd.trim()} className="btn-primary">
+                {gLoading ? 'Үүсгэж байна...' : 'Script үүсгэх →'}
               </button>
               
               {gResult && (
-                <div className="minimal-card" style={{ marginTop: '32px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <span style={{ fontSize: '11px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '2px' }}>Үүсгэсэн script</span>
-                    <button onClick={() => { navigator.clipboard.writeText(gResult); showToast('Хуулагдлаа ✓') }} className="btn-ghost">
+                <div className="minimal-card" style={{ marginTop: '40px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 500 }}>Үүсгэсэн script</span>
+                    <button onClick={() => { navigator.clipboard.writeText(gResult); showToast('Хуулагдлаа ✓') }} className="btn-ghost" style={{ fontSize: '12px' }}>
                       Хуулах
                     </button>
                   </div>
-                  <pre style={{ fontSize: '14px', lineHeight: '1.6', color: '#e4e4e7', whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 }}>{gResult}</pre>
+                  <pre style={{ fontSize: '15px', lineHeight: '1.7', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 }}>{gResult}</pre>
                 </div>
               )}
             </div>
@@ -399,32 +407,33 @@ export default function Home() {
           {/* ── KNOWLEDGE ── */}
           {active === 'knowledge' && (
             <div>
-              <h1 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '8px' }}>Мэдлэгийн сан</h1>
-              <p style={{ fontSize: '14px', color: '#a1a1aa', marginBottom: '32px' }}>Supabase-д хадгалагдсан бүх мэдлэг. Score өндөр байх тусам generate-д илүү нөлөөлнө.</p>
+              <h1 style={{ fontSize: '28px', fontWeight: 600, marginBottom: '8px', letterSpacing: '-0.02em' }}>Мэдлэгийн сан</h1>
+              <p style={{ fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '32px' }}>AI-ийн сурсан бүх мэдлэг pattern-ууд.</p>
               
               {!kbData || kbData.counts.scripts === 0 ? (
-                <div style={{ textAlign: 'center', padding: '48px 0', color: '#71717a' }}>Одоохондоо сурсан зүйл алга. Script сургах таб дээр эхлэ.</div>
+                <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-secondary)' }}>Одоохондоо сурсан зүйл алга. Script сургах таб дээр эхлэ.</div>
               ) : (
                 <>
                   {[
-                    { title: 'Pattern-ууд', items: kbData.patterns, color: '#F97316' },
-                    { title: 'Hook хэлбэрүүд', items: kbData.hooks, color: '#fbbf24' },
-                    { title: 'CTA хэлбэрүүд', items: kbData.ctas, color: '#34d399' },
-                    { title: 'Сэтгэл зүйн аргууд', items: kbData.triggers, color: '#2dd4bf' },
+                    { title: 'Pattern-ууд', items: kbData.patterns, color: '#7C3AED' },
+                    { title: 'Hook хэлбэрүүд', items: kbData.hooks, color: '#f59e0b' },
+                    { title: 'CTA хэлбэрүүд', items: kbData.ctas, color: '#10b981' },
+                    { title: 'Сэтгэл зүйн аргууд', items: kbData.triggers, color: '#6366f1' },
                   ].map(({ title, items, color }) => items?.length ? (
-                    <div key={title} style={{ marginBottom: '32px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '2px' }}>{title}</span>
-                        <span className="badge-orange" style={{ color: color, borderColor: color, backgroundColor: `${color}15` }}>{items.length}</span>
+                    <div key={title} style={{ marginBottom: '40px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                         <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>{title}</span>
+                         <span className="badge-purple" style={{ color: color, borderColor: color, backgroundColor: `${color}15` }}>{items.length}</span>
                       </div>
                       {items.map(item => (
                         <div key={item.id} style={{ 
-                          fontSize: '14px', color: '#e4e4e7', padding: '12px 16px', borderRadius: '8px', 
-                          backgroundColor: '#141414', marginBottom: '8px', borderLeft: `2px solid ${color}`,
-                          lineHeight: '1.6', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px'
+                          fontSize: '14px', color: 'var(--text-primary)', padding: '16px 20px', borderRadius: '10px', 
+                          backgroundColor: 'var(--bg-card)', marginBottom: '12px', borderLeft: `3px solid ${color}`,
+                          lineHeight: '1.6', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px',
+                          boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
                         }}>
                           <span>{item.content}</span>
-                          {item.score > 1 && <span style={{ fontSize: '11px', color: color, flexShrink: 0 }}>×{item.score}</span>}
+                          {item.score > 1 && <span style={{ fontSize: '12px', color: color, flexShrink: 0, fontWeight: 600 }}>×{item.score}</span>}
                         </div>
                       ))}
                     </div>
@@ -437,12 +446,12 @@ export default function Home() {
           {/* ── HOOKS ── */}
           {active === 'hooks' && (
             <div>
-              <h1 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '8px' }}>Hook санал</h1>
-              <p style={{ fontSize: '14px', color: '#a1a1aa', marginBottom: '32px' }}>Hormozi · Дэгээ · Notion — generate хийхэд автоматаар ашиглагдана</p>
+              <h1 style={{ fontSize: '28px', fontWeight: 600, marginBottom: '8px', letterSpacing: '-0.02em' }}>Hook санал</h1>
+              <p style={{ fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '32px' }}>Hormozi, Дэгээ, Notion загварууд.</p>
               
-              <input style={{background:'#1A1A1A', color:'#ffffff', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', padding:'10px 14px', width:'100%', fontFamily:'DM Sans, sans-serif', outline:'none'}} placeholder="Хайх..." value={hookSearch} onChange={e => setHookSearch(e.target.value)} />
+              <input style={{...inputStyle, marginBottom: '24px'}} placeholder="Хайх..." value={hookSearch} onChange={e => setHookSearch(e.target.value)} />
               
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '32px' }}>
                 {hookCats.slice(0, 12).map(c => (
                   <button key={c} onClick={() => setHookCat(c)} className={`tag ${hookCat === c ? 'active' : ''}`}>
                     {c === 'all' ? 'Бүгд' : c}
@@ -450,48 +459,50 @@ export default function Home() {
                 ))}
               </div>
               
-              {filteredHooks.map((h, i) => (
-                <div key={i} onClick={() => { navigator.clipboard.writeText(h.text); showToast('Хуулагдлаа ✓') }}
-                  style={{ 
-                    fontSize: '14px', color: '#e4e4e7', padding: '16px', borderRadius: '8px', 
-                    backgroundColor: '#141414', marginBottom: '8px', borderLeft: `2px solid ${srcColor[h.src] || '#F97316'}`,
-                    lineHeight: '1.6', cursor: 'pointer', transition: 'all 0.2s ease',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-                  }}
-                  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#1a1a1a')}
-                  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#141414')}
-                >
-                  {h.text}
-                  <div style={{ fontSize: '11px', marginTop: '8px', color: srcColor[h.src] || '#F97316' }}>
-                    {h.src} · {h.cat}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {filteredHooks.map((h, i) => (
+                  <div key={i} onClick={() => { navigator.clipboard.writeText(h.text); showToast('Хуулагдлаа ✓') }}
+                    style={{ 
+                      fontSize: '15px', color: 'var(--text-primary)', padding: '20px', borderRadius: '10px', 
+                      backgroundColor: 'var(--bg-card)', borderLeft: `3px solid ${srcColor[h.src] || '#7C3AED'}`,
+                      lineHeight: '1.6', cursor: 'pointer', transition: 'all 0.2s ease',
+                      boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
+                    }}
+                    onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-input)')}
+                    onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
+                  >
+                    {h.text}
+                    <div style={{ fontSize: '12px', marginTop: '12px', color: srcColor[h.src] || '#7C3AED', fontWeight: 500 }}>
+                      {h.src} · {h.cat}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
 
           {/* ── HISTORY ── */}
           {active === 'history' && (
             <div>
-              <h1 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '8px' }}>Script түүх</h1>
-              <p style={{ fontSize: '14px', color: '#a1a1aa', marginBottom: '32px' }}>Supabase-д хадгалагдсан бүх script-үүд</p>
+              <h1 style={{ fontSize: '28px', fontWeight: 600, marginBottom: '8px', letterSpacing: '-0.02em' }}>Script түүх</h1>
+              <p style={{ fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '32px' }}>Боловсруулсан сүүлийн хувилбарууд.</p>
               
               {!kbData?.scripts?.length ? (
-                <div style={{ textAlign: 'center', padding: '48px 0', color: '#71717a' }}>Одоохондоо түүх алга.</div>
+                <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-secondary)' }}>Одоохондоо түүх алга.</div>
               ) : (
                 kbData.scripts.map(s => {
                   const p = PERF_MAP[s.performance] || PERF_MAP.unknown
                   const lesson = s.analysis?.key_lesson as string
                   return (
                     <div key={s.id} className="minimal-card" style={{ marginBottom: '16px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                          <span style={{ fontSize: '15px', fontWeight: 600 }}>{s.category}</span>
-                          <span style={{ fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '20px', color: p.color, backgroundColor: p.bg }}>{p.l}</span>
+                          <span style={{ fontSize: '16px', fontWeight: 600 }}>{s.category}</span>
+                          <span style={{ fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '99px', color: p.color, backgroundColor: p.bg }}>{p.l}</span>
                         </div>
-                        <span style={{ fontSize: '12px', color: '#71717a' }}>{new Date(s.created_at).toLocaleDateString('mn-MN')}</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{new Date(s.created_at).toLocaleDateString('mn-MN')}</span>
                       </div>
-                      {lesson && <div style={{ fontSize: '14px', color: '#F97316', lineHeight: '1.6' }}>→ {lesson}</div>}
+                      {lesson && <div style={{ fontSize: '14px', color: 'var(--accent-purple)', lineHeight: '1.6' }}>→ {lesson}</div>}
                     </div>
                   )
                 })
@@ -505,27 +516,24 @@ export default function Home() {
       {isMobile && (
         <div className="mobile-nav" style={{
           position: 'fixed', bottom: 0, left: 0, right: 0, height: '70px',
-          backgroundColor: '#0F0F0F', borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          backgroundColor: 'var(--bg-card)', borderTop: '1px solid var(--border-subtle)',
           display: 'flex', justifyContent: 'space-around', alignItems: 'center', zIndex: 50
         }}>
           {[
-            { id: 'train', label: 'Script сургах' },
-            { id: 'generate', label: 'Script үүсгэх' },
-            { id: 'knowledge', label: 'Мэдлэгийн сан' },
-            { id: 'hooks', label: 'Hook санал' },
-            { id: 'history', label: 'Script түүх' }
+            { id: 'train', label: 'Сургах' },
+            { id: 'generate', label: 'Үүсгэх' },
+            { id: 'knowledge', label: 'Мэдлэг' },
+            { id: 'hooks', label: 'Hook' },
+            { id: 'history', label: 'Түүх' }
           ].map(tab => (
             <button key={tab.id} onClick={() => setActive(tab.id)} style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px',
-              color: active === tab.id ? '#F97316' : '#a1a1aa',
-              fontSize: '10px', background: 'none', border: 'none', padding: '8px', flex: 1
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px',
+              color: active === tab.id ? 'var(--accent-purple)' : 'var(--text-secondary)',
+              fontSize: '11px', fontWeight: 500, background: 'none', border: 'none', padding: '8px', flex: 1
             }}>
-              <span style={{ fontSize: '18px' }}>{
-                tab.id === 'train' ? '📝' :
-                tab.id === 'generate' ? '✨' :
-                tab.id === 'knowledge' ? '🧠' :
-                tab.id === 'hooks' ? '🎣' : '📜'
-              }</span>
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {ICONS[tab.id]}
+              </span>
               <span style={{ textAlign: 'center' }}>{tab.label}</span>
             </button>
           ))}
